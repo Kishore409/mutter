@@ -283,6 +283,9 @@ AC_ARG_ENABLE(egl-device,
   enable_egl_device=no
 )
 AS_IF([test "$enable_egl_device" = "yes"], [
+  PKG_CHECK_MODULES(WAYLAND_EGLSTREAM_PROTOCOLS, [wayland-eglstream-protocols],
+		    [ac_wayland_eglstream_protocols_pkgdatadir=`$PKG_CONFIG --variable=pkgdatadir wayland-eglstream-protocols`])
+  AC_SUBST(WAYLAND_EGLSTREAM_PROTOCOLS_DATADIR, $ac_wayland_eglstream_protocols_pkgdatadir)
   AC_DEFINE([HAVE_EGL_DEVICE],[1], [Defined if EGLDevice support is enabled])
 ])
 
