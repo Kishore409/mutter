@@ -192,6 +192,8 @@ struct _MetaRendererNative
   MetaMonitorManagerKms *monitor_manager_kms;
   MetaGles3 *gles3;
 
+  gboolean use_modifiers;
+
   GHashTable *gpu_datas;
 
   CoglClosure *swap_notify_idle;
@@ -1277,30 +1279,57 @@ gbm_get_next_fb_id (MetaGpuKms         *gpu_kms,
                     struct gbm_bo     **out_next_bo,
                     uint32_t           *out_next_fb_id)
 {
+  MetaRendererNative *renderer_native = meta_renderer_native_from_gpu (gpu_kms);
   struct gbm_bo *next_bo;
   uint32_t next_fb_id;
   int kms_fd;
   uint32_t handles[4] = { 0, };
   uint32_t strides[4] = { 0, };
   uint32_t offsets[4] = { 0, };
+  uint64_t modifiers[4] = { 0, };
+  int i;
 
   /* Now we need to set the CRTC to whatever is the front buffer */
   next_bo = gbm_surface_lock_front_buffer (gbm_surface);
 
-  strides[0] = gbm_bo_get_stride (next_bo);
-  handles[0] = gbm_bo_get_handle (next_bo).u32;
+  for (i = 0; i < gbm_bo_get_plane_count (next_bo); i++)
+    {
+      strides[i] = gbm_bo_get_stride_for_plane (next_bo, i);
+      handles[i] = gbm_bo_get_handle_for_plane (next_bo, i).u32;
+      offsets[i] = gbm_bo_get_offset (next_bo, i);
+      modifiers[i] = gbm_bo_get_modifier (next_bo);
+    }
 
   kms_fd = meta_gpu_kms_get_fd (gpu_kms);
 
-  if (drmModeAddFB2 (kms_fd,
-                     gbm_bo_get_width (next_bo),
-                     gbm_bo_get_height (next_bo),
-                     gbm_bo_get_format (next_bo),
-                     handles,
-                     strides,
-                     offsets,
-                     &next_fb_id,
-                     0))
+  if (renderer_native->use_modifiers &&
+      modifiers[0] != DRM_FORMAT_MOD_INVALID)
+    {
+      if (drmModeAddFB2WithModifiers (kms_fd,
+                                      gbm_bo_get_width (next_bo),
+                                      gbm_bo_get_height (next_bo),
+                                      gbm_bo_get_format (next_bo),
+                                      handles,
+                                      strides,
+                                      offsets,
+                                      modifiers,
+                                      &next_fb_id,
+                                      DRM_MODE_FB_MODIFIERS))
+        {
+          g_warning ("Failed to create new back buffer handle: %m");
+          gbm_surface_release_buffer (gbm_surface, next_bo);
+          return FALSE;
+        }
+    }
+  else if (drmModeAddFB2 (kms_fd,
+                          gbm_bo_get_width (next_bo),
+                          gbm_bo_get_height (next_bo),
+                          gbm_bo_get_format (next_bo),
+                          handles,
+                          strides,
+                          offsets,
+                          &next_fb_id,
+                          0))
     {
       if (drmModeAddFB (kms_fd,
                         gbm_bo_get_width (next_bo),
@@ -3037,6 +3066,22 @@ meta_renderer_native_finalize (GObject *object)
 }
 
 static void
+meta_renderer_native_constructed (GObject *object)
+{
+  MetaRendererNative *renderer_native = META_RENDERER_NATIVE (object);
+  MetaMonitorManager *monitor_manager =
+    META_MONITOR_MANAGER (renderer_native->monitor_manager_kms);
+  MetaBackend *backend = meta_monitor_manager_get_backend (monitor_manager);
+  MetaSettings *settings = meta_backend_get_settings (backend);
+
+  if (meta_settings_is_experimental_feature_enabled (
+        settings, META_EXPERIMENTAL_FEATURE_KMS_MODIFIERS))
+    renderer_native->use_modifiers = TRUE;
+
+  G_OBJECT_CLASS (meta_renderer_native_parent_class)->constructed (object);
+}
+
+static void
 meta_renderer_native_init (MetaRendererNative *renderer_native)
 {
   renderer_native->gpu_datas =
@@ -3054,6 +3099,7 @@ meta_renderer_native_class_init (MetaRendererNativeClass *klass)
   object_class->get_property = meta_renderer_native_get_property;
   object_class->set_property = meta_renderer_native_set_property;
   object_class->finalize = meta_renderer_native_finalize;
+  object_class->constructed = meta_renderer_native_constructed;
 
   renderer_class->create_cogl_renderer = meta_renderer_native_create_cogl_renderer;
   renderer_class->create_view = meta_renderer_native_create_view;
