@@ -196,4 +196,6 @@ gchar * meta_display_get_pad_action_label (MetaDisplay        *display,
                                            MetaPadActionType   action_type,
                                            guint               action_number);
 
+void meta_display_trace_for_10_s (MetaDisplay *display);
+
 #endif

@@ -56,6 +56,7 @@
 #include "backends/meta-stage-private.h"
 #include "backends/meta-input-settings-private.h"
 #include <clutter/x11/clutter-x11.h>
+#include "cogl/cogl-trace.h"
 
 #ifdef HAVE_RANDR
 #include <X11/extensions/Xrandr.h>
@@ -3268,4 +3269,29 @@ meta_display_notify_pad_group_switch (MetaDisplay        *display,
                  n_group, n_mode);
 
   g_string_free (message, TRUE);
+}
+
+#ifdef HAVE_TRACING
+static gboolean
+disable_tracing_timeout_callback (gpointer user_data)
+{
+  cogl_set_tracing_enabled_on_thread (g_main_context_default (), FALSE);
+
+  return G_SOURCE_REMOVE;
+}
+#endif
+
+/**
+ * meta_display_trace_for_10_s:
+ * @display: the display
+ */
+void
+meta_display_trace_for_10_s (MetaDisplay *display)
+{
+#ifdef HAVE_TRACING
+  cogl_set_tracing_enabled_on_thread (g_main_context_default (), TRUE);
+  g_timeout_add_seconds (10, disable_tracing_timeout_callback, NULL);
+#else
+  g_warning ("Tried to enable tracing without tracing enabled at compile time");
+#endif
 }
