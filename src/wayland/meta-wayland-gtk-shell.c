@@ -132,11 +132,26 @@ gtk_surface_present (struct wl_client   *client,
                              META_CLIENT_TYPE_APPLICATION, NULL);
 }
 
+static void
+gtk_surface_passive_present (struct wl_client   *client,
+                             struct wl_resource *resource)
+{
+  MetaWaylandGtkSurface *gtk_surface = wl_resource_get_user_data (resource);
+  MetaWaylandSurface *surface = gtk_surface->surface;
+  MetaWindow *window = surface->window;
+
+  if (!window)
+    return;
+
+  meta_window_set_demands_attention (window);
+}
+
 static const struct gtk_surface1_interface meta_wayland_gtk_surface_interface = {
   gtk_surface_set_dbus_properties,
   gtk_surface_set_modal,
   gtk_surface_unset_modal,
   gtk_surface_present,
+  gtk_surface_passive_present,
 };
 
 static void
