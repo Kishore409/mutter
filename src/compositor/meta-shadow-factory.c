@@ -178,8 +178,8 @@ meta_shadow_unref (MetaShadow *shadow)
         }
 
       meta_window_shape_unref (shadow->key.shape);
-      cogl_object_unref (shadow->texture);
-      cogl_object_unref (shadow->pipeline);
+      g_clear_pointer (&shadow->texture, cogl_object_unref);
+      g_clear_pointer (&shadow->pipeline, cogl_object_unref);
 
       g_slice_free (MetaShadow, shadow);
     }
@@ -702,7 +702,7 @@ flip_buffer (guchar *buffer,
 #undef BLOCK_SIZE
 }
 
-static void
+static gboolean
 make_shadow (MetaShadow     *shadow,
              cairo_region_t *region)
 {
@@ -720,6 +720,7 @@ make_shadow (MetaShadow     *shadow,
   int x_offset;
   int y_offset;
   int n_rectangles, j, k;
+  gboolean ret;
 
   cairo_region_get_extents (region, &extents);
 
@@ -812,13 +813,19 @@ make_shadow (MetaShadow     *shadow,
     {
       meta_warning ("Failed to allocate shadow texture: %s\n", error->message);
       cogl_error_free (error);
+      ret = FALSE;
+      goto out;
     }
 
+  shadow->pipeline = meta_create_texture_pipeline (shadow->texture);
+  ret = TRUE;
+
+out:
   cairo_region_destroy (row_convolve_region);
   cairo_region_destroy (column_convolve_region);
   g_free (buffer);
 
-  shadow->pipeline = meta_create_texture_pipeline (shadow->texture);
+  return ret;
 }
 
 static MetaShadowParams *
@@ -982,8 +989,12 @@ meta_shadow_factory_get_shadow (MetaShadowFactory *factory,
   g_assert (center_width >= 0 && center_height >= 0);
 
   region = meta_window_shape_to_region (shape, center_width, center_height);
-  make_shadow (shadow, region);
-
+  if (!make_shadow (shadow, region))
+    {
+      cairo_region_destroy (region);
+      meta_shadow_unref (shadow);
+      return NULL;
+    }
   cairo_region_destroy (region);
 
   if (cacheable)

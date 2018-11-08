@@ -1628,6 +1628,12 @@ check_needs_shadow (MetaWindowActor *self)
                                                          priv->shadow_shape,
                                                          shape_bounds.width, shape_bounds.height,
                                                          shadow_class, appears_focused);
+      if (!*shadow_location)
+        {
+          g_object_set (self,
+                        "shadow-mode", META_SHADOW_MODE_FORCED_OFF,
+                        NULL);
+        }
     }
 
   if (old_shadow != NULL)
