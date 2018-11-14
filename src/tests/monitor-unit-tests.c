@@ -4879,6 +4879,9 @@ meta_test_monitor_custom_second_rotated_tiled_config (void)
   MetaMonitorManagerTest *monitor_manager_test =
     META_MONITOR_MANAGER_TEST (monitor_manager);
 
+  int *i = NULL;
+  *i = 42;
+
   meta_monitor_manager_test_set_handles_transforms (monitor_manager_test,
                                                     TRUE);
 
