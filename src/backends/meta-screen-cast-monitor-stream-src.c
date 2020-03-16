@@ -521,6 +521,12 @@ meta_screen_cast_monitor_stream_src_set_cursor_metadata (MetaScreenCastStreamSrc
 }
 
 static gboolean
+meta_screen_cast_monitor_stream_src_can_use_dma_buf (MetaScreenCastStreamSrc *src)
+{
+  return TRUE;
+}
+
+static gboolean
 meta_screen_cast_monitor_stream_src_is_cursor_sprite_inhibited (MetaHwCursorInhibitor *inhibitor,
                                                                 MetaCursorSprite      *cursor_sprite)
 {
@@ -566,4 +572,6 @@ meta_screen_cast_monitor_stream_src_class_init (MetaScreenCastMonitorStreamSrcCl
     meta_screen_cast_monitor_stream_src_blit_to_framebuffer;
   src_class->set_cursor_metadata =
     meta_screen_cast_monitor_stream_src_set_cursor_metadata;
+  src_class->can_use_dma_buf =
+    meta_screen_cast_monitor_stream_src_can_use_dma_buf;
 }

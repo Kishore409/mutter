@@ -61,6 +61,7 @@ struct _MetaScreenCastStreamSrcClass
                               MetaRectangle           *crop_rect);
   void (* set_cursor_metadata) (MetaScreenCastStreamSrc *src,
                                 struct spa_meta_cursor  *spa_meta_cursor);
+  gboolean (* can_use_dma_buf) (MetaScreenCastStreamSrc *src);
 };
 
 void meta_screen_cast_stream_src_maybe_record_frame (MetaScreenCastStreamSrc *src);

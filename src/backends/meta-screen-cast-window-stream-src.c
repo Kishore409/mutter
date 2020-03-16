@@ -479,6 +479,12 @@ meta_screen_cast_window_stream_src_set_cursor_metadata (MetaScreenCastStreamSrc 
     }
 }
 
+static gboolean
+meta_screen_cast_window_stream_src_can_use_dma_buf (MetaScreenCastStreamSrc *src)
+{
+  return FALSE;
+}
+
 MetaScreenCastWindowStreamSrc *
 meta_screen_cast_window_stream_src_new (MetaScreenCastWindowStream  *window_stream,
                                         GError                     **error)
@@ -508,4 +514,6 @@ meta_screen_cast_window_stream_src_class_init (MetaScreenCastWindowStreamSrcClas
     meta_screen_cast_window_stream_src_blit_to_framebuffer;
   src_class->get_videocrop = meta_screen_cast_window_stream_src_get_videocrop;
   src_class->set_cursor_metadata = meta_screen_cast_window_stream_src_set_cursor_metadata;
+  src_class->can_use_dma_buf =
+    meta_screen_cast_window_stream_src_can_use_dma_buf;
 }

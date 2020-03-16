@@ -164,6 +164,15 @@ meta_screen_cast_stream_src_set_cursor_metadata (MetaScreenCastStreamSrc *src,
 }
 
 static gboolean
+meta_screen_cast_stream_src_can_use_dma_buf (MetaScreenCastStreamSrc *src)
+{
+  MetaScreenCastStreamSrcClass *klass =
+    META_SCREEN_CAST_STREAM_SRC_GET_CLASS (src);
+
+  return klass->can_use_dma_buf (src);
+}
+
+static gboolean
 draw_cursor_sprite_via_offscreen (MetaScreenCastStreamSrc  *src,
                                   CoglTexture              *cursor_texture,
                                   int                       bitmap_width,
@@ -642,7 +651,6 @@ on_stream_add_buffer (void             *data,
     meta_screen_cast_stream_src_get_instance_private (src);
   CoglContext *context =
     clutter_backend_get_cogl_context (clutter_get_default_backend ());
-  CoglRenderer *renderer = cogl_context_get_renderer (context);
   g_autoptr (GError) error = NULL;
   CoglDmaBufHandle *dmabuf_handle;
   struct spa_buffer *spa_buffer = buffer->buffer;
@@ -655,13 +663,22 @@ on_stream_add_buffer (void             *data,
   spa_data[0].mapoffset = 0;
   spa_data[0].maxsize = stride * priv->video_format.size.height;
 
-  dmabuf_handle = cogl_renderer_create_dma_buf (renderer,
-                                                priv->stream_width,
-                                                priv->stream_height,
-                                                &error);
+  if (meta_screen_cast_stream_src_can_use_dma_buf (src))
+    {
+      CoglRenderer *renderer = cogl_context_get_renderer (context);
 
-  if (error)
-    g_debug ("Error exporting DMA buffer handle: %s", error->message);
+      dmabuf_handle = cogl_renderer_create_dma_buf (renderer,
+                                                    priv->stream_width,
+                                                    priv->stream_height,
+                                                    &error);
+
+      if (!dmabuf_handle)
+        g_debug ("Error exporting DMA buffer handle: %s", error->message);
+    }
+  else
+    {
+      dmabuf_handle = NULL;
+    }
 
   if (dmabuf_handle)
     {
