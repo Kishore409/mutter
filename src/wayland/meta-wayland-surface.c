@@ -72,6 +72,13 @@ enum
 
 static guint surface_state_signals[SURFACE_STATE_SIGNAL_N_SIGNALS];
 
+typedef struct _MetaWaylandStateFenceEntry
+{
+  MetaWaylandStateFencePriority priority;
+  MetaWaylandStateFence fence;
+  gpointer user_data;
+} MetaWaylandStateFenceEntry;
+
 typedef struct _MetaWaylandSurfaceRolePrivate
 {
   MetaWaylandSurface *surface;
@@ -491,7 +498,7 @@ meta_wayland_surface_state_reset (MetaWaylandSurfaceState *state)
   meta_wayland_surface_state_set_default (state);
 }
 
-static void
+void
 meta_wayland_surface_state_merge_into (MetaWaylandSurfaceState *from,
                                        MetaWaylandSurfaceState *to)
 {
@@ -820,28 +827,92 @@ cleanup:
   meta_wayland_surface_state_reset (state);
 }
 
-void
-meta_wayland_surface_apply_cached_state (MetaWaylandSurface *surface)
-{
-  if (!surface->cached_state)
-    return;
-
-  meta_wayland_surface_apply_state (surface, surface->cached_state);
-}
-
 MetaWaylandSurfaceState *
 meta_wayland_surface_get_pending_state (MetaWaylandSurface *surface)
 {
   return surface->pending_state;
 }
 
-MetaWaylandSurfaceState *
-meta_wayland_surface_ensure_cached_state (MetaWaylandSurface *surface)
+static int
+meta_wayland_state_fence_entry_compare (gconstpointer a,
+                                        gconstpointer b)
 {
-  if (!surface->cached_state)
-    surface->cached_state = g_object_new (META_TYPE_WAYLAND_SURFACE_STATE,
-                                          NULL);
-  return surface->cached_state;
+  const MetaWaylandStateFenceEntry *fence_entry_a = a;
+  const MetaWaylandStateFenceEntry *fence_entry_b = b;
+
+  if (fence_entry_a->priority < fence_entry_b->priority)
+    return -1;
+  else if (fence_entry_a->priority > fence_entry_b->priority)
+    return 1;
+  else
+    return 0;
+}
+
+void
+meta_wayland_surface_add_state_fence (MetaWaylandSurface            *surface,
+                                      MetaWaylandStateFencePriority  priority,
+                                      MetaWaylandStateFence          fence,
+                                      gpointer                       user_data)
+{
+  MetaWaylandStateFenceEntry *fence_entry;
+
+  fence_entry = g_new0 (MetaWaylandStateFenceEntry, 1);
+  *fence_entry = (MetaWaylandStateFenceEntry) {
+    .priority = priority,
+    .fence = fence,
+    .user_data = user_data,
+  };
+
+  surface->state_fences = g_list_prepend (surface->state_fences, fence_entry);
+  surface->state_fences = g_list_sort (surface->state_fences,
+                                       meta_wayland_state_fence_entry_compare);
+}
+
+void
+meta_wayland_surface_remove_state_fence (MetaWaylandSurface    *surface,
+                                         MetaWaylandStateFence  fence)
+{
+  GList *l;
+
+  for (l = surface->state_fences; l; l = l->next)
+    {
+      MetaWaylandStateFenceEntry *fence_entry = l->data;
+
+      if (fence_entry->fence == fence)
+        {
+          surface->state_fences = g_list_delete_link (surface->state_fences, l);
+          g_free (fence_entry);
+          return;
+        }
+    }
+}
+
+static gboolean
+meta_wayland_surface_base_state_fence (MetaWaylandSurface      *surface,
+                                       MetaWaylandSurfaceState *pending,
+                                       gpointer                 user_data)
+{
+  meta_wayland_surface_apply_state (surface, pending);
+  return TRUE;
+}
+
+void
+meta_wayland_surface_commit_past_fence (MetaWaylandSurface            *surface,
+                                        MetaWaylandSurfaceState       *state,
+                                        MetaWaylandStateFencePriority  from_priority)
+{
+  GList *l;
+
+  for (l = surface->state_fences; l; l = l->next)
+    {
+      MetaWaylandStateFenceEntry *fence_entry = l->data;
+
+      if (fence_entry->priority <= from_priority)
+        continue;
+
+      if (fence_entry->fence (surface, state, fence_entry->user_data))
+        return;
+    }
 }
 
 static void
@@ -856,17 +927,8 @@ meta_wayland_surface_commit (MetaWaylandSurface *surface)
       !meta_wayland_buffer_is_realized (pending->buffer))
     meta_wayland_buffer_realize (pending->buffer);
 
-  if (meta_wayland_surface_should_cache_state (surface))
-    {
-      MetaWaylandSurfaceState *cached_state;
-
-      cached_state = meta_wayland_surface_ensure_cached_state (surface);
-      meta_wayland_surface_state_merge_into (pending, cached_state);
-    }
-  else
-    {
-      meta_wayland_surface_apply_state (surface, surface->pending_state);
-    }
+  meta_wayland_surface_commit_past_fence (surface, pending,
+                                          META_WAYLAND_STATE_FENCE_PRIORITY_TOP);
 }
 
 static void
@@ -1328,7 +1390,6 @@ wl_surface_destructor (struct wl_resource *resource)
   g_clear_pointer (&surface->texture, cogl_object_unref);
   g_clear_pointer (&surface->buffer_ref, meta_wayland_buffer_ref_unref);
 
-  g_clear_object (&surface->cached_state);
   g_clear_object (&surface->pending_state);
 
   if (surface->opaque_region)
@@ -1361,6 +1422,10 @@ wl_surface_destructor (struct wl_resource *resource)
     }
 
   g_hash_table_destroy (surface->shortcut_inhibited_seats);
+
+  meta_wayland_surface_remove_state_fence (surface,
+                                           meta_wayland_surface_base_state_fence);
+  g_warn_if_fail (!surface->state_fences);
 
   g_object_unref (surface);
 
@@ -1600,6 +1665,11 @@ meta_wayland_surface_init (MetaWaylandSurface *surface)
   g_signal_connect (surface, "geometry-changed",
                     G_CALLBACK (meta_wayland_surface_update_outputs_recursively),
                     NULL);
+
+  meta_wayland_surface_add_state_fence (surface,
+                                        META_WAYLAND_STATE_FENCE_PRIORITY_BASE,
+                                        meta_wayland_surface_base_state_fence,
+                                        NULL);
 }
 
 static void
@@ -1809,27 +1879,6 @@ meta_wayland_surface_get_window (MetaWaylandSurface *surface)
     return NULL;
 
   return meta_wayland_surface_role_get_window (surface->role);
-}
-
-static gboolean
-meta_wayland_surface_role_should_cache_state (MetaWaylandSurfaceRole *surface_role)
-{
-  MetaWaylandSurfaceRoleClass *klass;
-
-  klass = META_WAYLAND_SURFACE_ROLE_GET_CLASS (surface_role);
-  if (klass->should_cache_state)
-    return klass->should_cache_state (surface_role);
-  else
-    return FALSE;
-}
-
-gboolean
-meta_wayland_surface_should_cache_state (MetaWaylandSurface *surface)
-{
-  if (!surface->role)
-    return FALSE;
-
-  return meta_wayland_surface_role_should_cache_state (surface->role);
 }
 
 static void
