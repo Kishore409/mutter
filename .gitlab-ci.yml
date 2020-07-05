@@ -96,7 +96,7 @@ test-mutter-coverage:
       - tags
       - master
 
-can-build-gnome-shell:
+can-build-and-run-gnome-shell:
   stage: test
   dependencies:
     - build-mutter
@@ -106,6 +106,7 @@ can-build-gnome-shell:
     - .gitlab-ci/checkout-gnome-shell.sh
     - meson gnome-shell gnome-shell/build --prefix /usr -Dman=false
     - ninja -C gnome-shell/build install
+    - /usr/share/installed-tests/gnome-shell/run-gnome-shell-tests.sh
   only:
     - merge_requests
     - /^.*$/
