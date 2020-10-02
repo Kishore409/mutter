@@ -43,7 +43,7 @@ typedef enum _MetaKmsAssignPlaneFlag
   META_KMS_ASSIGN_PLANE_FLAG_ALLOW_FAIL = 1 << 1,
 } MetaKmsAssignPlaneFlag;
 
-struct _MetaKmsPageFlipFeedback
+struct _MetaKmsPageFlipListenerIface
 {
   void (* flipped) (MetaKmsCrtc  *crtc,
                     unsigned int  sequence,
@@ -71,11 +71,11 @@ typedef struct _MetaKmsPlaneFeedback
 
 void meta_kms_feedback_free (MetaKmsFeedback *feedback);
 
-MetaKmsFeedbackResult meta_kms_feedback_get_result (MetaKmsFeedback *feedback);
+MetaKmsFeedbackResult meta_kms_feedback_get_result (const MetaKmsFeedback *feedback);
 
-GList * meta_kms_feedback_get_failed_planes (MetaKmsFeedback *feedback);
+GList * meta_kms_feedback_get_failed_planes (const MetaKmsFeedback *feedback);
 
-const GError * meta_kms_feedback_get_error (MetaKmsFeedback *feedback);
+const GError * meta_kms_feedback_get_error (const MetaKmsFeedback *feedback);
 
 MetaKmsUpdate * meta_kms_update_new (MetaKmsDevice *device);
 
@@ -117,10 +117,10 @@ MetaKmsPlaneAssignment * meta_kms_update_unassign_plane (MetaKmsUpdate *update,
                                                          MetaKmsCrtc   *crtc,
                                                          MetaKmsPlane  *plane);
 
-void meta_kms_update_page_flip (MetaKmsUpdate                 *update,
-                                MetaKmsCrtc                   *crtc,
-                                const MetaKmsPageFlipFeedback *feedback,
-                                gpointer                       user_data);
+void meta_kms_update_add_page_flip_listener (MetaKmsUpdate                      *update,
+                                             MetaKmsCrtc                        *crtc,
+                                             const MetaKmsPageFlipListenerIface *iface,
+                                             gpointer                            user_data);
 
 void meta_kms_update_set_custom_page_flip (MetaKmsUpdate             *update,
                                            MetaKmsCustomPageFlipFunc  custom_page_flip_func,
