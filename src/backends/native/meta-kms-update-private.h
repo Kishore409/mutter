@@ -113,6 +113,8 @@ MetaKmsFeedback * meta_kms_feedback_new_failed (GList  *failed_planes,
 
 void meta_kms_update_seal (MetaKmsUpdate *update);
 
+void meta_kms_update_unseal (MetaKmsUpdate *update);
+
 gboolean meta_kms_update_is_sealed (MetaKmsUpdate *update);
 
 MetaKmsDevice * meta_kms_update_get_device (MetaKmsUpdate *update);
@@ -136,6 +138,9 @@ GList * meta_kms_update_get_crtc_gammas (MetaKmsUpdate *update);
 void meta_kms_update_get_custom_page_flip_func (MetaKmsUpdate             *update,
                                                 MetaKmsCustomPageFlipFunc *custom_page_flip_func,
                                                 gpointer                  *custom_page_flip_user_data);
+
+void meta_kms_update_drop_plane_assignment (MetaKmsUpdate *update,
+                                            MetaKmsPlane  *plane);
 
 GList * meta_kms_update_take_result_listeners (MetaKmsUpdate *update);
 
