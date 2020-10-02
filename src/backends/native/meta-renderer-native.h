@@ -57,6 +57,8 @@ void meta_renderer_native_finish_frame (MetaRendererNative *renderer_native);
 
 gboolean meta_renderer_native_use_modifiers (MetaRendererNative *renderer_native);
 
+gboolean meta_renderer_native_is_mode_set_pending (MetaRendererNative *renderer_native);
+
 gboolean meta_onscreen_native_is_buffer_scanout_compatible (CoglOnscreen *onscreen,
                                                             uint32_t      drm_format,
                                                             uint64_t      drm_modifier,
