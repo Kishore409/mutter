@@ -156,6 +156,15 @@ meta_kms_impl_device_get_driver_description (MetaKmsImplDevice *impl_device)
   return priv->driver_description;
 }
 
+const char *
+meta_kms_impl_device_get_path (MetaKmsImplDevice *impl_device)
+{
+  MetaKmsImplDevicePrivate *priv =
+    meta_kms_impl_device_get_instance_private (impl_device);
+
+  return priv->path;
+}
+
 gboolean
 meta_kms_impl_device_dispatch (MetaKmsImplDevice  *impl_device,
                                GError            **error)

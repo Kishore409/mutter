@@ -1964,6 +1964,11 @@ meta_onscreen_native_swap_buffers_with_damage (CoglOnscreen  *onscreen,
   kms_crtc = meta_crtc_kms_get_kms_crtc (META_CRTC_KMS (onscreen_native->crtc));
   kms_device = meta_kms_crtc_get_device (kms_crtc);
 
+  meta_topic (META_DEBUG_KMS,
+              "Posting primary plane composite update for CRTC %u (%s)",
+              meta_kms_crtc_get_id (kms_crtc),
+              meta_kms_device_get_path (kms_device));
+
   flags = META_KMS_UPDATE_FLAG_NONE;
   kms_feedback = meta_kms_post_pending_update_sync (kms, kms_device, flags);
   if (meta_kms_feedback_get_result (kms_feedback) != META_KMS_FEEDBACK_PASSED)
@@ -2159,6 +2164,11 @@ meta_onscreen_native_direct_scanout (CoglOnscreen   *onscreen,
 
   kms_crtc = meta_crtc_kms_get_kms_crtc (META_CRTC_KMS (onscreen_native->crtc));
   kms_device = meta_kms_crtc_get_device (kms_crtc);
+
+  meta_topic (META_DEBUG_KMS,
+              "Posting direct scanout update for CRTC %u (%s)",
+              meta_kms_crtc_get_id (kms_crtc),
+              meta_kms_device_get_path (kms_device));
 
   flags = META_KMS_UPDATE_FLAG_PRESERVE_ON_ERROR;
   kms_feedback = meta_kms_post_pending_update_sync (kms, kms_device, flags);
@@ -2637,6 +2647,8 @@ meta_renderer_native_queue_modes_reset (MetaRendererNative *renderer_native)
       onscreen_native->pending_set_crtc = TRUE;
     }
 
+  meta_topic (META_DEBUG_KMS, "Queue mode set");
+
   renderer_native->pending_unset_disabled_crtcs = TRUE;
 }
 
@@ -2996,6 +3008,8 @@ meta_renderer_native_finish_frame (MetaRendererNative *renderer_native)
   if (renderer_native->pending_unset_disabled_crtcs)
     {
       GList *l;
+
+      meta_topic (META_DEBUG_KMS, "Disabling all disabled CRTCs");
 
       for (l = meta_backend_get_gpus (backend); l; l = l->next)
         {
