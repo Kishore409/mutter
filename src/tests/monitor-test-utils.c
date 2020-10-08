@@ -324,6 +324,7 @@ void
 check_monitor_configuration (MonitorTestCaseExpect *expect)
 {
   MetaBackend *backend = meta_get_backend ();
+  MetaRenderer *renderer = meta_backend_get_renderer (backend);
   MetaMonitorManager *monitor_manager =
     meta_backend_get_monitor_manager (backend);
   MetaMonitorManagerTest *monitor_manager_test =
@@ -542,6 +543,8 @@ check_monitor_configuration (MonitorTestCaseExpect *expect)
       else
         {
           MetaCrtcMode *expected_current_mode;
+          MetaRendererView *view;
+          cairo_rectangle_int_t view_layout;
           GList *k;
 
           for (k = meta_crtc_get_outputs (crtc); k; k = k->next)
@@ -568,6 +571,23 @@ check_monitor_configuration (MonitorTestCaseExpect *expect)
                                           FLT_EPSILON);
           g_assert_cmpfloat_with_epsilon (crtc_config->layout.origin.y,
                                           expect->crtcs[i].y,
+                                          FLT_EPSILON);
+
+          view = meta_renderer_get_view_for_crtc (renderer, crtc);
+          g_assert_nonnull (view);
+          clutter_stage_view_get_layout (CLUTTER_STAGE_VIEW (view),
+                                         &view_layout);
+          g_assert_cmpfloat_with_epsilon (crtc_config->layout.origin.x,
+                                          view_layout.x,
+                                          FLT_EPSILON);
+          g_assert_cmpfloat_with_epsilon (crtc_config->layout.origin.y,
+                                          view_layout.y,
+                                          FLT_EPSILON);
+          g_assert_cmpfloat_with_epsilon (crtc_config->layout.size.width,
+                                          view_layout.width,
+                                          FLT_EPSILON);
+          g_assert_cmpfloat_with_epsilon (crtc_config->layout.size.height,
+                                          view_layout.height,
                                           FLT_EPSILON);
         }
     }
