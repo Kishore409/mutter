@@ -133,6 +133,10 @@ apply_crtc_assignments (MetaMonitorManager    *manager,
   to_configure_outputs = g_list_copy (meta_gpu_get_outputs (gpu));
   to_configure_crtcs = g_list_copy (meta_gpu_get_crtcs (gpu));
 
+  g_list_foreach (meta_gpu_get_crtcs (gpu),
+                  (GFunc) meta_crtc_clear_output_assignments,
+                  NULL);
+
   for (i = 0; i < n_crtcs; i++)
     {
       MetaCrtcAssignment *crtc_assignment = crtcs[i];

@@ -50,6 +50,15 @@ uint64_t meta_crtc_get_id (MetaCrtc *crtc);
 META_EXPORT_TEST
 MetaGpu * meta_crtc_get_gpu (MetaCrtc *crtc);
 
+META_EXPORT_TEST
+GList * meta_crtc_get_outputs (MetaCrtc *crtc);
+
+void meta_crtc_assign_output (MetaCrtc   *crtc,
+                              MetaOutput *output);
+
+META_EXPORT_TEST
+void meta_crtc_clear_output_assignments (MetaCrtc *crtc);
+
 MetaMonitorTransform meta_crtc_get_all_transforms (MetaCrtc *crtc);
 
 META_EXPORT_TEST

@@ -44,6 +44,7 @@ typedef struct _MetaCrtcPrivate
 
   MetaMonitorTransform all_transforms;
 
+  GList *outputs;
   MetaCrtcConfig *config;
 } MetaCrtcPrivate;
 
@@ -63,6 +64,31 @@ meta_crtc_get_gpu (MetaCrtc *crtc)
   MetaCrtcPrivate *priv = meta_crtc_get_instance_private (crtc);
 
   return priv->gpu;
+}
+
+GList *
+meta_crtc_get_outputs (MetaCrtc *crtc)
+{
+  MetaCrtcPrivate *priv = meta_crtc_get_instance_private (crtc);
+
+  return priv->outputs;
+}
+
+void
+meta_crtc_assign_output (MetaCrtc   *crtc,
+                         MetaOutput *output)
+{
+  MetaCrtcPrivate *priv = meta_crtc_get_instance_private (crtc);
+
+  priv->outputs = g_list_append (priv->outputs, output);
+}
+
+void
+meta_crtc_clear_output_assignments (MetaCrtc *crtc)
+{
+  MetaCrtcPrivate *priv = meta_crtc_get_instance_private (crtc);
+
+  g_clear_pointer (&priv->outputs, g_list_free);
 }
 
 MetaMonitorTransform
@@ -165,6 +191,7 @@ meta_crtc_finalize (GObject *object)
   MetaCrtcPrivate *priv = meta_crtc_get_instance_private (crtc);
 
   g_clear_pointer (&priv->config, g_free);
+  g_clear_pointer (&priv->outputs, g_list_free);
 
   G_OBJECT_CLASS (meta_crtc_parent_class)->finalize (object);
 }

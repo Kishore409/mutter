@@ -381,6 +381,10 @@ apply_crtc_assignments (MetaMonitorManager    *manager,
   to_configure_outputs = g_list_copy (meta_gpu_get_outputs (gpu));
   to_disable_crtcs = g_list_copy (meta_gpu_get_crtcs (gpu));
 
+  g_list_foreach (meta_gpu_get_crtcs (gpu),
+                  (GFunc) meta_crtc_clear_output_assignments,
+                  NULL);
+
   XGrabServer (manager_xrandr->xdisplay);
 
   /* First compute the new size of the screen (framebuffer) */
@@ -434,6 +438,7 @@ apply_crtc_assignments (MetaMonitorManager    *manager,
                                   NULL, 0);
 
           meta_crtc_unset_config (crtc);
+          meta_crtc_clear_output_assignments (crtc);
         }
     }
 
@@ -454,6 +459,7 @@ apply_crtc_assignments (MetaMonitorManager    *manager,
                               NULL, 0);
 
       meta_crtc_unset_config (crtc);
+      meta_crtc_clear_output_assignments (crtc);
     }
 
   g_assert (width > 0 && height > 0);
