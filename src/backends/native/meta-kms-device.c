@@ -26,6 +26,7 @@
 #include <xf86drm.h>
 
 #include "backends/native/meta-backend-native.h"
+#include "backends/native/meta-kms-impl-device-atomic.h"
 #include "backends/native/meta-kms-impl-device-simple.h"
 #include "backends/native/meta-kms-impl-device.h"
 #include "backends/native/meta-kms-impl.h"
@@ -238,6 +239,20 @@ typedef struct _CreateImplDeviceData
 } CreateImplDeviceData;
 
 static gboolean
+is_atomic_allowed (const char *driver_name)
+{
+  const char *atomic_driver_deny_list[] = {
+    "qxl",
+    "vmwgfx",
+    "vboxvideo",
+    "nvidia-drm",
+    NULL,
+  };
+
+  return !g_strv_contains (atomic_driver_deny_list, driver_name);
+}
+
+static gboolean
 get_driver_info (int    fd,
                  char **name,
                  char **description)
@@ -264,6 +279,8 @@ meta_create_kms_impl_device (MetaKmsDevice  *device,
                              const char     *path,
                              GError        **error)
 {
+  GType impl_device_type;
+  gboolean supports_atomic_mode_setting;
   int ret;
   g_autofree char *driver_name = NULL;
   g_autofree char *driver_description = NULL;
@@ -285,10 +302,36 @@ meta_create_kms_impl_device (MetaKmsDevice  *device,
       driver_description = g_strdup ("Unknown");
     }
 
-  g_message ("Adding device '%s' (%s) using non-atomic mode setting.",
-             path, driver_name);
+  if (!is_atomic_allowed (driver_name))
+    {
+      g_message ("Adding device '%s' (%s) using non-atomic mode setting"
+                 " (using atomic mode setting not allowed).",
+                 path, driver_name);
+      impl_device_type = META_TYPE_KMS_IMPL_DEVICE_SIMPLE;
+    }
+  else
+    {
+      ret = drmSetClientCap (fd, DRM_CLIENT_CAP_ATOMIC, 1);
+      if (ret == 0)
+        supports_atomic_mode_setting = TRUE;
+      else
+        supports_atomic_mode_setting = FALSE;
 
-  return g_initable_new (META_TYPE_KMS_IMPL_DEVICE_SIMPLE, NULL, error,
+      if (supports_atomic_mode_setting)
+        {
+          g_message ("Adding device '%s' (%s) using atomic mode setting.",
+                     path, driver_name);
+          impl_device_type = META_TYPE_KMS_IMPL_DEVICE_ATOMIC;
+        }
+      else
+        {
+          g_message ("Adding device '%s' (%s) using non-atomic mode setting.",
+                     path, driver_name);
+          impl_device_type = META_TYPE_KMS_IMPL_DEVICE_SIMPLE;
+        }
+    }
+
+  return g_initable_new (impl_device_type, NULL, error,
                          "device", device,
                          "impl", impl,
                          "fd", fd,
