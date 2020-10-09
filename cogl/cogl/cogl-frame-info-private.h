@@ -43,6 +43,8 @@ struct _CoglFrameInfo
   float refresh_rate;
 
   int64_t global_frame_counter;
+
+  gboolean is_symbolic;
 };
 
 COGL_EXPORT

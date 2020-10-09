@@ -51,6 +51,9 @@ struct _MetaKmsPageFlipListenerIface
                     unsigned int  tv_usec,
                     gpointer      user_data);
 
+  void (* ready) (MetaKmsCrtc *crtc,
+                  gpointer     user_data);
+
   void (* mode_set_fallback) (MetaKmsCrtc *crtc,
                               gpointer     user_data);
 
