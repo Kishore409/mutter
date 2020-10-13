@@ -101,6 +101,7 @@ typedef enum
   META_DEBUG_DBUS            = 1 << 18,
   META_DEBUG_INPUT           = 1 << 19,
   META_DEBUG_WAYLAND         = 1 << 20,
+  META_DEBUG_REMOTE_DESKTOP  = 1 << 21,
 } MetaDebugTopic;
 
 /**
