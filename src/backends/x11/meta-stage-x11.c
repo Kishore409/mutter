@@ -35,6 +35,7 @@
 #include "clutter/clutter-mutter.h"
 #include "clutter/x11/clutter-x11.h"
 #include "clutter/x11/clutter-backend-x11.h"
+#include "cogl/cogl-mutter.h"
 #include "cogl/cogl.h"
 #include "core/display-private.h"
 #include "meta/main.h"
@@ -254,6 +255,28 @@ meta_stage_x11_unrealize (ClutterStageWindow *stage_window)
   g_clear_object (&stage_x11->onscreen);
 }
 
+static CoglOnscreen *
+create_onscreen (CoglContext *cogl_context,
+                 int          width,
+                 int          height)
+{
+  CoglDisplay *cogl_display = cogl_context_get_display (cogl_context);
+  CoglRenderer *cogl_renderer = cogl_display_get_renderer (cogl_display);
+
+  switch (cogl_renderer_get_winsys_id (cogl_renderer))
+    {
+    case COGL_WINSYS_ID_GLX:
+      return COGL_ONSCREEN (cogl_onscreen_glx_new (cogl_context,
+                                                   width, height));
+    case COGL_WINSYS_ID_EGL_XLIB:
+      return COGL_ONSCREEN (cogl_onscreen_xlib_new (cogl_context,
+                                                    width, height));
+    default:
+      g_assert_not_reached ();
+      return NULL;
+    }
+}
+
 static gboolean
 meta_stage_x11_realize (ClutterStageWindow *stage_window)
 {
@@ -267,7 +290,7 @@ meta_stage_x11_realize (ClutterStageWindow *stage_window)
 
   clutter_actor_get_size (CLUTTER_ACTOR (stage_cogl->wrapper), &width, &height);
 
-  stage_x11->onscreen = cogl_onscreen_new (backend->cogl_context, width, height);
+  stage_x11->onscreen = create_onscreen (backend->cogl_context, width, height);
 
   if (META_IS_BACKEND_X11_CM (stage_x11->backend))
     {
