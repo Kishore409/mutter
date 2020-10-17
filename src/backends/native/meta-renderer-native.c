@@ -342,7 +342,8 @@ get_supported_egl_modifiers (CoglOnscreen *onscreen,
                              uint32_t      format)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   MetaEgl *egl = meta_onscreen_native_get_egl (onscreen_native);
   MetaGpu *gpu;
@@ -390,7 +391,8 @@ get_supported_modifiers (CoglOnscreen *onscreen,
                          uint32_t      format)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (onscreen_native->crtc);
   MetaGpu *gpu;
   g_autoptr (GArray) modifiers = NULL;
@@ -408,7 +410,8 @@ static GArray *
 get_supported_kms_formats (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (onscreen_native->crtc);
 
   return meta_crtc_kms_copy_drm_format_list (crtc_kms);
@@ -443,7 +446,8 @@ init_secondary_gpu_state_gpu_copy_mode (MetaRendererNative         *renderer_nat
 {
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaEgl *egl = meta_onscreen_native_get_egl (onscreen_native);
   int width, height;
   EGLNativeWindowType egl_native_window;
@@ -601,7 +605,8 @@ init_secondary_gpu_state_cpu_copy_mode (MetaRendererNative         *renderer_nat
 {
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state;
   MetaGpuKms *gpu_kms;
   MetaKmsDevice *kms_device;
@@ -666,7 +671,8 @@ init_secondary_gpu_state (MetaRendererNative  *renderer_native,
                           GError             **error)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaGpu *gpu = meta_crtc_get_gpu (onscreen_native->crtc);
   MetaRendererNativeGpuData *renderer_gpu_data;
 
@@ -713,7 +719,8 @@ static void
 free_current_secondary_bo (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state;
 
   secondary_gpu_state = onscreen_native->secondary_gpu_state;
@@ -727,7 +734,8 @@ static void
 free_current_bo (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
 
   g_clear_object (&onscreen_native->gbm.current_fb);
   free_current_secondary_bo (onscreen);
@@ -995,7 +1003,8 @@ static void
 swap_secondary_drm_fb (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state;
 
   secondary_gpu_state = onscreen_native->secondary_gpu_state;
@@ -1011,7 +1020,8 @@ static void
 meta_onscreen_native_swap_drm_fb (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
 
   if (!onscreen_native->gbm.next_fb)
     return;
@@ -1058,7 +1068,8 @@ notify_view_crtc_presented (MetaRendererView *view,
     clutter_stage_view_get_onscreen (stage_view);
   CoglOnscreen *onscreen = COGL_ONSCREEN (framebuffer);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   CoglFrameInfo *frame_info;
   MetaCrtc *crtc;
@@ -1262,7 +1273,8 @@ static void
 queue_dummy_power_save_page_flip (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   const unsigned int timeout_ms = 100;
 
@@ -1285,7 +1297,8 @@ meta_onscreen_native_flip_crtc (CoglOnscreen     *onscreen,
                                 MetaCrtc         *crtc)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   MetaGpuKms *render_gpu = onscreen_native->render_gpu;
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (crtc);
@@ -1343,7 +1356,8 @@ meta_onscreen_native_set_crtc_mode (CoglOnscreen              *onscreen,
                                     MetaRendererNativeGpuData *renderer_gpu_data)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (onscreen_native->crtc);
   MetaKmsCrtc *kms_crtc = meta_crtc_kms_get_kms_crtc (crtc_kms);
   MetaKmsDevice *kms_device = meta_kms_crtc_get_device (kms_crtc);
@@ -1380,7 +1394,8 @@ static void
 meta_onscreen_native_flip_crtcs (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererView *view = onscreen_native->view;
 
   COGL_TRACE_BEGIN_SCOPED (MetaOnscreenNativeFlipCrtcs,
@@ -1394,7 +1409,8 @@ import_shared_framebuffer (CoglOnscreen                        *onscreen,
                            MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaGpuKms *gpu_kms;
   MetaKmsDevice *kms_device;
   struct gbm_device *gbm_device;
@@ -1470,7 +1486,8 @@ copy_shared_framebuffer_gpu (CoglOnscreen                        *onscreen,
                              gboolean                            *egl_context_changed)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = renderer_gpu_data->renderer_native;
   MetaEgl *egl = meta_renderer_native_get_egl (renderer_native);
   GError *error = NULL;
@@ -1644,7 +1661,8 @@ copy_shared_framebuffer_primary_gpu (CoglOnscreen                        *onscre
 {
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   MetaRendererNativeGpuData *primary_gpu_data;
   MetaDrmBufferDumb *buffer_dumb;
@@ -1784,7 +1802,8 @@ static void
 update_secondary_gpu_state_pre_swap_buffers (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state;
 
   COGL_TRACE_BEGIN_SCOPED (MetaRendererNativeGpuStatePreSwapBuffers,
@@ -1839,7 +1858,8 @@ update_secondary_gpu_state_post_swap_buffers (CoglOnscreen *onscreen,
                                               gboolean     *egl_context_changed)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   MetaOnscreenNativeSecondaryGpuState *secondary_gpu_state;
 
@@ -1879,7 +1899,8 @@ static void
 ensure_crtc_modes (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglContext *cogl_context = cogl_framebuffer_get_context (framebuffer);
   CoglRenderer *cogl_renderer = cogl_context->display->renderer;
@@ -1911,7 +1932,8 @@ kms_crtc_from_view (MetaRendererView *view)
     clutter_stage_view_get_onscreen (CLUTTER_STAGE_VIEW (view));
   CoglOnscreen *onscreen = COGL_ONSCREEN (framebuffer);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (onscreen_native->crtc);
 
   return meta_crtc_kms_get_kms_crtc (crtc_kms);
@@ -1924,7 +1946,8 @@ kms_device_from_view (MetaRendererView *view)
     clutter_stage_view_get_onscreen (CLUTTER_STAGE_VIEW (view));
   CoglOnscreen *onscreen = COGL_ONSCREEN (framebuffer);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaCrtcKms *crtc_kms = META_CRTC_KMS (onscreen_native->crtc);
   MetaKmsCrtc *kms_crtc = meta_crtc_kms_get_kms_crtc (crtc_kms);
 
@@ -1938,7 +1961,8 @@ gpu_from_view (MetaRendererView *view)
     clutter_stage_view_get_onscreen (CLUTTER_STAGE_VIEW (view));
   CoglOnscreen *onscreen = COGL_ONSCREEN (framebuffer);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
 
   return meta_crtc_get_gpu (onscreen_native->crtc);
 }
@@ -2086,7 +2110,8 @@ meta_onscreen_native_swap_buffers_with_damage (CoglOnscreen  *onscreen,
     meta_backend_get_monitor_manager (backend);
   MetaKms *kms = meta_backend_native_get_kms (backend_native);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaGpuKms *render_gpu = onscreen_native->render_gpu;
   MetaKmsDevice *render_kms_device = meta_gpu_kms_get_kms_device (render_gpu);
   ClutterFrame *frame = user_data;
@@ -2323,7 +2348,8 @@ meta_onscreen_native_is_buffer_scanout_compatible (CoglOnscreen *onscreen,
                                                    uint32_t      stride)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   const MetaCrtcConfig *crtc_config;
   MetaDrmBuffer *fb;
   struct gbm_bo *gbm_bo;
@@ -2368,7 +2394,8 @@ meta_onscreen_native_direct_scanout (CoglOnscreen   *onscreen,
                                      GError        **error)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaGpuKms *render_gpu = onscreen_native->render_gpu;
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglContext *cogl_context = cogl_framebuffer_get_context (framebuffer);
@@ -2484,7 +2511,8 @@ static gboolean
 should_surface_be_sharable (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
 
   if (META_GPU_KMS (meta_crtc_get_gpu (onscreen_native->crtc)) ==
       onscreen_native->render_gpu)
@@ -2502,7 +2530,8 @@ meta_renderer_native_create_surface_gbm (CoglOnscreen        *onscreen,
                                          GError             **error)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNative *renderer_native = onscreen_native->renderer_native;
   MetaEgl *egl = meta_onscreen_native_get_egl (onscreen_native);
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
@@ -2593,7 +2622,8 @@ meta_renderer_native_create_surface_egl_device (CoglOnscreen  *onscreen,
 {
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   CoglContext *cogl_context = cogl_framebuffer_get_context (framebuffer);
   CoglDisplay *cogl_display = cogl_context->display;
   CoglDisplayEGL *cogl_display_egl = cogl_display->winsys;
@@ -2687,11 +2717,11 @@ meta_renderer_native_init_onscreen (CoglOnscreen *onscreen,
 
   g_return_val_if_fail (cogl_display_egl->egl_context, FALSE);
 
-  onscreen_egl = g_slice_new0 (CoglOnscreenEGL);
+  onscreen_egl = cogl_onscreen_egl_new ();
   cogl_onscreen_set_winsys (onscreen, onscreen_egl);
 
   onscreen_native = g_slice_new0 (MetaOnscreenNative);
-  onscreen_egl->platform = onscreen_native;
+  cogl_onscreen_egl_set_platform (onscreen_egl, onscreen_native);
 
   /*
    * Don't actually initialize anything here, since we may not have the
@@ -2712,7 +2742,8 @@ meta_onscreen_native_allocate (CoglOnscreen *onscreen,
 {
   CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+  MetaOnscreenNative *onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   MetaRendererNativeGpuData *renderer_gpu_data;
   struct gbm_surface *gbm_surface;
   EGLSurface egl_surface;
@@ -2747,7 +2778,7 @@ meta_onscreen_native_allocate (CoglOnscreen *onscreen,
         return FALSE;
 
       onscreen_native->gbm.surface = gbm_surface;
-      onscreen_egl->egl_surface = egl_surface;
+      cogl_onscreen_egl_set_egl_surface (onscreen_egl, egl_surface);
       break;
 #ifdef HAVE_EGL_DEVICE
     case META_RENDERER_NATIVE_MODE_EGL_DEVICE:
@@ -2769,7 +2800,7 @@ meta_onscreen_native_allocate (CoglOnscreen *onscreen,
         return FALSE;
 
       onscreen_native->egl.stream = egl_stream;
-      onscreen_egl->egl_surface = egl_surface;
+      cogl_onscreen_egl_set_egl_surface (onscreen_egl, egl_surface);
       break;
 #endif /* HAVE_EGL_DEVICE */
     }
@@ -2781,10 +2812,13 @@ static void
 destroy_egl_surface (CoglOnscreen *onscreen)
 {
   CoglOnscreenEGL *onscreen_egl = cogl_onscreen_get_winsys (onscreen);
+  EGLSurface egl_surface;
 
-  if (onscreen_egl->egl_surface != EGL_NO_SURFACE)
+  egl_surface = cogl_onscreen_egl_get_egl_surface (onscreen_egl);
+  if (cogl_onscreen_egl_get_egl_surface (onscreen_egl) != EGL_NO_SURFACE)
     {
-      MetaOnscreenNative *onscreen_native = onscreen_egl->platform;
+      MetaOnscreenNative *onscreen_native =
+        cogl_onscreen_egl_get_platform (onscreen_egl);
       MetaEgl *egl = meta_onscreen_native_get_egl (onscreen_native);
       CoglFramebuffer *framebuffer = COGL_FRAMEBUFFER (onscreen);
       CoglContext *cogl_context = cogl_framebuffer_get_context (framebuffer);
@@ -2793,9 +2827,9 @@ destroy_egl_surface (CoglOnscreen *onscreen)
 
       meta_egl_destroy_surface (egl,
                                 cogl_renderer_egl->edpy,
-                                onscreen_egl->egl_surface,
+                                egl_surface,
                                 NULL);
-      onscreen_egl->egl_surface = EGL_NO_SURFACE;
+      cogl_onscreen_egl_set_egl_surface (onscreen_egl, EGL_NO_SURFACE);
     }
 }
 
@@ -2810,17 +2844,20 @@ meta_renderer_native_release_onscreen (CoglOnscreen *onscreen)
   MetaOnscreenNative *onscreen_native;
   MetaRendererNative *renderer_native;
   MetaRendererNativeGpuData *renderer_gpu_data;
+  EGLSurface egl_surface;
 
   /* If we never successfully allocated then there's nothing to do */
   if (onscreen_egl == NULL)
     return;
 
-  onscreen_native = onscreen_egl->platform;
+  onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   renderer_native = onscreen_native->renderer_native;
 
-  if (onscreen_egl->egl_surface != EGL_NO_SURFACE &&
-      (cogl_display_egl->current_draw_surface == onscreen_egl->egl_surface ||
-       cogl_display_egl->current_read_surface == onscreen_egl->egl_surface))
+  egl_surface = cogl_onscreen_egl_get_egl_surface (onscreen_egl);
+  if (egl_surface != EGL_NO_SURFACE &&
+      (cogl_display_egl->current_draw_surface == egl_surface ||
+       cogl_display_egl->current_read_surface == egl_surface))
     {
       if (!_cogl_winsys_egl_make_current (cogl_display,
                                           cogl_display_egl->dummy_surface,
@@ -2875,7 +2912,7 @@ meta_renderer_native_release_onscreen (CoglOnscreen *onscreen)
                    secondary_gpu_state_free);
 
   g_slice_free (MetaOnscreenNative, onscreen_native);
-  g_slice_free (CoglOnscreenEGL, cogl_onscreen_get_winsys (onscreen));
+  cogl_onscreen_egl_free (cogl_onscreen_get_winsys (onscreen));
   cogl_onscreen_set_winsys (onscreen, NULL);
 }
 
@@ -2929,7 +2966,8 @@ meta_renderer_native_create_onscreen (MetaRendererNative   *renderer_native,
     }
 
   onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  onscreen_native = onscreen_egl->platform;
+  onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   onscreen_native->renderer_native = renderer_native;
   onscreen_native->render_gpu = render_gpu;
   onscreen_native->output = output;
@@ -3053,7 +3091,8 @@ meta_onscreen_native_set_view (CoglOnscreen     *onscreen,
   MetaOnscreenNative *onscreen_native;
 
   onscreen_egl = cogl_onscreen_get_winsys (onscreen);
-  onscreen_native = onscreen_egl->platform;
+  onscreen_native =
+    cogl_onscreen_egl_get_platform (onscreen_egl);
   onscreen_native->view = view;
 }
 
@@ -3139,6 +3178,7 @@ meta_renderer_native_create_view (MetaRenderer       *renderer,
   int onscreen_height;
   MetaRectangle view_layout;
   MetaRendererView *view;
+  EGLSurface egl_surface;
   GError *error = NULL;
 
   crtc_config = meta_crtc_get_config (crtc);
@@ -3227,9 +3267,10 @@ meta_renderer_native_create_view (MetaRenderer       *renderer,
   /* Ensure we don't point to stale surfaces when creating the offscreen */
   onscreen_egl = cogl_onscreen_get_winsys (onscreen);
   cogl_display_egl = cogl_display->winsys;
+  egl_surface = cogl_onscreen_egl_get_egl_surface (onscreen_egl);
   _cogl_winsys_egl_make_current (cogl_display,
-                                 onscreen_egl->egl_surface,
-                                 onscreen_egl->egl_surface,
+                                 egl_surface,
+                                 egl_surface,
                                  cogl_display_egl->egl_context);
 
   return view;
