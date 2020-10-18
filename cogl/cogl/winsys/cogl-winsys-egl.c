@@ -636,8 +636,6 @@ static CoglWinsysVtable _cogl_winsys_vtable =
     .display_destroy = _cogl_winsys_display_destroy,
     .context_init = _cogl_winsys_context_init,
     .context_deinit = _cogl_winsys_context_deinit,
-    .onscreen_init = _cogl_winsys_onscreen_init,
-    .onscreen_deinit = _cogl_winsys_onscreen_deinit,
     .onscreen_bind = _cogl_winsys_onscreen_bind,
     .onscreen_swap_buffers_with_damage =
       _cogl_winsys_onscreen_swap_buffers_with_damage,
