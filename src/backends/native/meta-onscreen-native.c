@@ -1225,7 +1225,7 @@ meta_onscreen_native_is_buffer_scanout_compatible (CoglOnscreen *onscreen,
   return TRUE;
 }
 
-gboolean
+static gboolean
 meta_onscreen_native_direct_scanout (CoglOnscreen   *onscreen,
                                      CoglScanout    *scanout,
                                      CoglFrameInfo  *frame_info,
@@ -2152,4 +2152,5 @@ meta_onscreen_native_class_init (MetaOnscreenNativeClass *klass)
 
   onscreen_class->swap_buffers_with_damage =
     meta_onscreen_native_swap_buffers_with_damage;
+  onscreen_class->direct_scanout = meta_onscreen_native_direct_scanout;
 }
