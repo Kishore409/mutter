@@ -95,10 +95,6 @@ struct _CoglDriverVtable
                          float alpha);
 
   void
-  (* framebuffer_query_bits) (CoglFramebuffer *framebuffer,
-                              CoglFramebufferBits *bits);
-
-  void
   (* framebuffer_finish) (CoglFramebuffer *framebuffer);
 
   void
