@@ -1007,7 +1007,7 @@ ensure_crtc_modes (CoglOnscreen *onscreen)
     meta_onscreen_native_set_crtc_mode (onscreen, renderer_gpu_data);
 }
 
-void
+static void
 meta_onscreen_native_swap_buffers_with_damage (CoglOnscreen  *onscreen,
                                                const int     *rectangles,
                                                int            n_rectangles,
@@ -1031,7 +1031,7 @@ meta_onscreen_native_swap_buffers_with_damage (CoglOnscreen  *onscreen,
   MetaGpuKms *render_gpu = onscreen_native->render_gpu;
   MetaKmsDevice *render_kms_device = meta_gpu_kms_get_kms_device (render_gpu);
   ClutterFrame *frame = user_data;
-  const CoglWinsysVtable *parent_vtable;
+  CoglOnscreenClass *parent_class;
   gboolean egl_context_changed = FALSE;
   MetaPowerSave power_save_mode;
   g_autoptr (GError) error = NULL;
@@ -1048,12 +1048,12 @@ meta_onscreen_native_swap_buffers_with_damage (CoglOnscreen  *onscreen,
 
   update_secondary_gpu_state_pre_swap_buffers (onscreen);
 
-  parent_vtable = meta_get_renderer_native_parent_vtable ();
-  parent_vtable->onscreen_swap_buffers_with_damage (onscreen,
-                                                    rectangles,
-                                                    n_rectangles,
-                                                    frame_info,
-                                                    user_data);
+  parent_class = COGL_ONSCREEN_CLASS (meta_onscreen_native_parent_class);
+  parent_class->swap_buffers_with_damage (onscreen,
+                                          rectangles,
+                                          n_rectangles,
+                                          frame_info,
+                                          user_data);
 
   renderer_gpu_data = meta_renderer_native_get_gpu_data (renderer_native,
                                                          render_gpu);
@@ -2144,8 +2144,12 @@ meta_onscreen_native_class_init (MetaOnscreenNativeClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
   CoglFramebufferClass *framebuffer_class = COGL_FRAMEBUFFER_CLASS (klass);
+  CoglOnscreenClass *onscreen_class = COGL_ONSCREEN_CLASS (klass);
 
   object_class->dispose = meta_onscreen_native_dispose;
 
   framebuffer_class->allocate = meta_onscreen_native_allocate;
+
+  onscreen_class->swap_buffers_with_damage =
+    meta_onscreen_native_swap_buffers_with_damage;
 }
