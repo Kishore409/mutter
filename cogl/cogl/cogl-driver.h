@@ -87,12 +87,6 @@ struct _CoglDriverVtable
                                CoglFramebufferState  state);
 
   void
-  (* framebuffer_finish) (CoglFramebuffer *framebuffer);
-
-  void
-  (* framebuffer_flush) (CoglFramebuffer *framebuffer);
-
-  void
   (* framebuffer_discard_buffers) (CoglFramebuffer *framebuffer,
                                    unsigned long buffers);
 
