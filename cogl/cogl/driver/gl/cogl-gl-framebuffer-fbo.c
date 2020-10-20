@@ -214,6 +214,12 @@ cogl_gl_framebuffer_fbo_bind (CoglGlFramebuffer *gl_framebuffer,
   GE (ctx, glBindFramebuffer (target, gl_framebuffer_fbo->gl_fbo.fbo_handle));
 }
 
+static void
+cogl_gl_framebuffer_fbo_flush_stereo_mode_state (CoglGlFramebuffer *gl_framebuffer)
+{
+  g_warn_if_reached ();
+}
+
 static GList *
 try_creating_renderbuffers (CoglContext                *ctx,
                             int                         width,
@@ -636,4 +642,6 @@ cogl_gl_framebuffer_fbo_class_init (CoglGlFramebufferFboClass *klass)
   driver_class->discard_buffers = cogl_gl_framebuffer_fbo_discard_buffers;
 
   gl_framebuffer_class->bind = cogl_gl_framebuffer_fbo_bind;
+  gl_framebuffer_class->flush_stereo_mode_state =
+    cogl_gl_framebuffer_fbo_flush_stereo_mode_state;
 }
