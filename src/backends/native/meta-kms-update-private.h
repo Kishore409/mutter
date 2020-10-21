@@ -71,11 +71,6 @@ typedef struct _MetaKmsConnectorUpdate
     uint64_t hborder;
     uint64_t vborder;
   } underscanning;
-
-  struct {
-    gboolean has_update;
-    uint64_t state;
-  } dpms;
 } MetaKmsConnectorUpdate;
 
 typedef struct _MetaKmsPageFlipListener
@@ -127,6 +122,8 @@ GList * meta_kms_update_get_page_flip_listeners (MetaKmsUpdate *update);
 GList * meta_kms_update_get_connector_updates (MetaKmsUpdate *update);
 
 GList * meta_kms_update_get_crtc_gammas (MetaKmsUpdate *update);
+
+gboolean meta_kms_update_is_power_save (MetaKmsUpdate *update);
 
 void meta_kms_update_get_custom_page_flip_func (MetaKmsUpdate             *update,
                                                 MetaKmsCustomPageFlipFunc *custom_page_flip_func,
