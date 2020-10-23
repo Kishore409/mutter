@@ -203,6 +203,8 @@ struct _MetaRendererNative
   gboolean pending_mode_set;
   guint mode_set_failed_feedback_source_id;
 
+  GList *kept_alive_onscreens;
+
   GList *power_save_page_flip_onscreens;
   guint power_save_page_flip_source_id;
 };
@@ -1999,6 +2001,14 @@ configure_disabled_crtcs (MetaGpu       *gpu,
 }
 
 static void
+clear_kept_alive_onscreens (MetaRendererNative *renderer_native)
+{
+  g_list_free_full (renderer_native->kept_alive_onscreens,
+                    g_object_unref);
+  renderer_native->kept_alive_onscreens = NULL;
+}
+
+static void
 meta_renderer_native_post_mode_set_updates (MetaRendererNative *renderer_native)
 {
   MetaRenderer *renderer = META_RENDERER (renderer_native);
@@ -2035,6 +2045,8 @@ meta_renderer_native_post_mode_set_updates (MetaRendererNative *renderer_native)
           break;
         }
     }
+
+  clear_kept_alive_onscreens (renderer_native);
 
   if (failed_views)
     {
@@ -3223,6 +3235,25 @@ meta_renderer_native_create_view (MetaRenderer       *renderer,
 }
 
 static void
+keep_current_onscreens_alive (MetaRenderer *renderer)
+{
+  MetaRendererNative *renderer_native = META_RENDERER_NATIVE (renderer);
+  GList *views;
+  GList *l;
+
+  views = meta_renderer_get_views (renderer);
+  for (l = views; l; l = l->next)
+    {
+      ClutterStageView *stage_view = l->data;
+      CoglFramebuffer *onscreen = clutter_stage_view_get_onscreen (stage_view);
+
+      renderer_native->kept_alive_onscreens =
+        g_list_prepend (renderer_native->kept_alive_onscreens,
+                        g_object_ref (onscreen));
+    }
+}
+
+static void
 meta_renderer_native_rebuild_views (MetaRenderer *renderer)
 {
   MetaBackend *backend = meta_renderer_get_backend (renderer);
@@ -3232,6 +3263,8 @@ meta_renderer_native_rebuild_views (MetaRenderer *renderer)
     META_RENDERER_CLASS (meta_renderer_native_parent_class);
 
   meta_kms_discard_pending_page_flips (kms);
+
+  keep_current_onscreens_alive (renderer);
 
   parent_renderer_class->rebuild_views (renderer);
 
@@ -4038,6 +4071,8 @@ static void
 meta_renderer_native_finalize (GObject *object)
 {
   MetaRendererNative *renderer_native = META_RENDERER_NATIVE (object);
+
+  clear_kept_alive_onscreens (renderer_native);
 
   if (renderer_native->power_save_page_flip_onscreens)
     {
