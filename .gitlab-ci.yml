@@ -1,12 +1,48 @@
-image: registry.gitlab.gnome.org/gnome/mutter/master:v4
+include:
+  - remote: 'https://gitlab.freedesktop.org/freedesktop/ci-templates/-/raw/77c0baf9e375ef9d2339148bf3ee0a27313c26ec/templates/fedora.yml'
 
 stages:
+ - prep
  - review
  - build
  - test
  - coverage
 
+.mutter.fedora:33:
+  variables:
+    FDO_DISTRIBUTION_VERSION: 33
+    FDO_DISTRIBUTION_TAG: '2020-11-07.0'
+    FDO_UPSTREAM_REPO: jadahl/mutter
+    FDO_DISTRIBUTION_EXEC: |
+      dnf install -y 'dnf-command(builddep)' &&
+      dnf builddep -y mutter --setopt=install_weak_deps=False &&
+
+      # For running unit tests
+      dnf install -y xorg-x11-server-Xvfb mesa-dri-drivers dbus dbus-x11 \
+                     xorg-x11-server-Xvfb accountsservice-libs \
+                     gnome-control-center gcovr libnma python3-gobject \
+                     python3-dbusmock &&
+
+      # GNOME Shell
+      dnf builddep -y gnome-shell --setopt=install_weak_deps=False &&
+      dnf remove -y gnome-bluetooth-libs-devel &&
+      dnf remove -y --noautoremove mutter mutter-devel &&
+
+      dnf clean all
+
+build-fedora-container:
+  extends:
+    - .fdo.container-build@fedora@x86_64
+    - .mutter.fedora:33
+  stage: prep
+  only:
+    - merge_requests
+    - /^.*$/
+
 check-commit-log:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: review
   variables:
     GIT_DEPTH: "100"
@@ -16,8 +52,11 @@ check-commit-log:
     - merge_requests
 
 build-mutter:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: build
-  needs: []
+  needs: ["build-fedora-container"]
   script:
     - meson . build -Dbuildtype=debugoptimized -Db_coverage=true -Degl_device=true -Dwayland_eglstream=true --werror --prefix /usr
     - ninja -C build
@@ -31,8 +70,11 @@ build-mutter:
     - /^.*$/
 
 build-without-opengl-and-glx:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: build
-  needs: []
+  needs: ["build-fedora-container"]
   script:
     - meson . build -Dbuildtype=debugoptimized -Dopengl=false -Dglx=false -Degl_device=true -Dwayland_eglstream=true --werror --prefix /usr
     - ninja -C build
@@ -45,8 +87,11 @@ build-without-opengl-and-glx:
     - /^.*$/
 
 build-without-native-backend-and-wayland:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: build
-  needs: []
+  needs: ["build-fedora-container"]
   script:
     - meson . build -Dbuildtype=debugoptimized -Dnative_backend=false -Dudev=false -Dwayland=false -Dcore_tests=false --werror --prefix /usr
     - ninja -C build
@@ -59,6 +104,9 @@ build-without-native-backend-and-wayland:
     - /^.*$/
 
 test-mutter:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: test
   dependencies:
     - build-mutter
@@ -84,6 +132,9 @@ test-mutter:
       - build
 
 test-mutter-coverage:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: coverage
   dependencies:
     - test-mutter
@@ -101,6 +152,9 @@ test-mutter-coverage:
     - /^.*$/
 
 can-build-gnome-shell:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
   stage: test
   dependencies:
     - build-mutter
