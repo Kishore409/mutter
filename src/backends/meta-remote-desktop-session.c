@@ -33,6 +33,7 @@
 #include "backends/meta-remote-access-controller-private.h"
 #include "backends/x11/meta-backend-x11.h"
 #include "cogl/cogl.h"
+#include "core/display-private.h"
 #include "meta/meta-backend.h"
 
 #include "meta-dbus-remote-desktop.h"
@@ -48,6 +49,7 @@ struct _MetaRemoteDesktopSession
 {
   MetaDBusRemoteDesktopSessionSkeleton parent;
 
+  GDBusConnection *connection;
   char *peer_name;
 
   char *session_id;
@@ -64,6 +66,8 @@ struct _MetaRemoteDesktopSession
   MetaRemoteDesktopSessionHandle *handle;
 
   gboolean is_clipboard_enabled;
+  gulong owner_changed_handler_id;
+  unsigned int transfer_serial;
 };
 
 static void
@@ -227,16 +231,15 @@ meta_remote_desktop_session_new (MetaRemoteDesktop  *remote_desktop,
 {
   GDBusInterfaceSkeleton *interface_skeleton;
   MetaRemoteDesktopSession *session;
-  GDBusConnection *connection;
 
   session = g_object_new (META_TYPE_REMOTE_DESKTOP_SESSION, NULL);
 
   session->peer_name = g_strdup (peer_name);
 
   interface_skeleton = G_DBUS_INTERFACE_SKELETON (session);
-  connection = meta_remote_desktop_get_connection (remote_desktop);
+  session->connection = meta_remote_desktop_get_connection (remote_desktop);
   if (!g_dbus_interface_skeleton_export (interface_skeleton,
-                                         connection,
+                                         session->connection,
                                          session->object_path,
                                          error))
     {
@@ -753,12 +756,102 @@ handle_notify_touch_up (MetaDBusRemoteDesktopSession *skeleton,
   return TRUE;
 }
 
+static const char *
+mime_types_to_string (char          **formats,
+                      MetaLogBuffer  *buf)
+{
+  g_autofree char *mime_types_string = NULL;
+  int len;
+
+  if (!formats)
+    return "N\\A";
+
+  mime_types_string = g_strjoinv (",", formats);
+  len = strlen (mime_types_string);
+  strncpy (buf->buf, mime_types_string,
+           G_N_ELEMENTS (buf->buf) - 1);
+  if (len >= G_N_ELEMENTS (buf->buf) - 1)
+    buf->buf[G_N_ELEMENTS (buf->buf) - 2] = '*';
+  buf->buf[G_N_ELEMENTS (buf->buf) - 1] = '\0';
+
+  return buf->buf;
+}
+
+static GVariant *
+generate_owner_changed_variant (char **mime_types_array)
+{
+  GVariantBuilder builder;
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+  if (mime_types_array)
+    {
+      g_variant_builder_add (&builder, "{sv}", "mime-types",
+                             g_variant_new ("(^as)", mime_types_array));
+    }
+
+  return g_variant_builder_end (&builder);
+}
+
+static void
+on_selection_owner_changed (MetaSelection            *selection,
+                            MetaSelectionType         selection_type,
+                            MetaSelectionSource      *owner,
+                            MetaRemoteDesktopSession *session)
+{
+  MetaLogBuffer log_buf;
+  g_autofree char **mime_types_array = NULL;
+  GList *l;
+  int i;
+  GVariant *options_variant;
+  const char *object_path;
+
+  if (selection_type != META_SELECTION_CLIPBOARD)
+    return;
+
+  if (owner)
+    {
+      GList *mime_types;
+      mime_types = meta_selection_source_get_mimetypes (owner);
+
+      mime_types_array = g_new0 (char *, g_list_length (mime_types) + 1);
+      for (l = meta_selection_source_get_mimetypes (owner), i = 0;
+           l;
+           l = l->next, i++)
+        mime_types_array[i] = l->data;
+    }
+
+  meta_topic (META_DEBUG_REMOTE_DESKTOP,
+              "Clipboard owner changed, owner: %p (%s), mime types: [%s], "
+              "notifying %s",
+              owner,
+              owner ? g_type_name_from_instance ((GTypeInstance *) owner)
+                    : "NULL",
+              mime_types_to_string (mime_types_array, &log_buf),
+              session->peer_name);
+
+  options_variant = generate_owner_changed_variant (mime_types_array);
+
+  object_path = g_dbus_interface_skeleton_get_object_path (
+    G_DBUS_INTERFACE_SKELETON (session));
+  g_dbus_connection_emit_signal (session->connection,
+                                 NULL,
+                                 object_path,
+                                 "org.gnome.Mutter.RemoteDesktop.Session",
+                                 "SelectionOwnerChanged",
+                                 g_variant_new ("(@a{sv})", options_variant),
+                                 NULL);
+
+  session->transfer_serial++;
+}
+
 static gboolean
 handle_enable_clipboard (MetaDBusRemoteDesktopSession *skeleton,
                          GDBusMethodInvocation        *invocation,
                          GVariant                     *arg_options)
 {
   MetaRemoteDesktopSession *session = META_REMOTE_DESKTOP_SESSION (skeleton);
+  MetaDisplay *display = meta_get_display ();
+  MetaSelection *selection = meta_display_get_selection (display);
 
   meta_topic (META_DEBUG_REMOTE_DESKTOP,
               "Enable clipboard for %s",
@@ -773,6 +866,10 @@ handle_enable_clipboard (MetaDBusRemoteDesktopSession *skeleton,
     }
 
   session->is_clipboard_enabled = TRUE;
+  session->owner_changed_handler_id =
+    g_signal_connect (selection, "owner-changed",
+                      G_CALLBACK (on_selection_owner_changed),
+                      session);
 
   meta_dbus_remote_desktop_session_complete_enable_clipboard (skeleton,
                                                               invocation);
@@ -785,6 +882,8 @@ handle_disable_clipboard (MetaDBusRemoteDesktopSession *skeleton,
                           GDBusMethodInvocation        *invocation)
 {
   MetaRemoteDesktopSession *session = META_REMOTE_DESKTOP_SESSION (skeleton);
+  MetaDisplay *display = meta_get_display ();
+  MetaSelection *selection = meta_display_get_selection (display);
 
   meta_topic (META_DEBUG_REMOTE_DESKTOP,
               "Disable clipboard for %s",
@@ -797,6 +896,8 @@ handle_disable_clipboard (MetaDBusRemoteDesktopSession *skeleton,
                                              "Was not enabled");
       return TRUE;
     }
+
+  g_clear_signal_handler (&session->owner_changed_handler_id, selection);
 
   meta_dbus_remote_desktop_session_complete_disable_clipboard (skeleton,
                                                                invocation);
@@ -847,6 +948,18 @@ handle_selection_write (MetaDBusRemoteDesktopSession *skeleton,
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                              G_DBUS_ERROR_FAILED,
                                              "Clipboard not enabled");
+      return TRUE;
+    }
+
+  if (session->transfer_serial != serial)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_FAILED,
+                                             "Provided transfer serial %u "
+                                             "doesn't match current current "
+                                             "transfer serial %u",
+                                             serial,
+                                             session->transfer_serial);
       return TRUE;
     }
 
@@ -950,8 +1063,12 @@ static void
 meta_remote_desktop_session_finalize (GObject *object)
 {
   MetaRemoteDesktopSession *session = META_REMOTE_DESKTOP_SESSION (object);
+  MetaDisplay *display = meta_get_display ();
+  MetaSelection *selection = meta_display_get_selection (display);
 
   g_assert (!meta_remote_desktop_session_is_running (session));
+
+  g_clear_signal_handler (&session->owner_changed_handler_id, selection);
 
   g_clear_object (&session->handle);
   g_free (session->peer_name);

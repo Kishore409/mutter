@@ -30,6 +30,11 @@
 #include "meta/util.h"
 #include "meta/common.h"
 
+typedef struct _MetaLogBuffer
+{
+  char buf[512];
+} MetaLogBuffer;
+
 /* META_EXPORT_TEST should be used to export symbols that are exported only
  * for testability purposes */
 #define META_EXPORT_TEST META_EXPORT
