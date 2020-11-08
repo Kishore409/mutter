@@ -122,22 +122,22 @@ append_monitor (MetaMonitorManager *manager,
     {
       .width = 800,
       .height = 600,
-      .refresh_rate = 60.0
+      .refresh_rate = 10.0
     },
     {
       .width = 1024,
       .height = 768,
-      .refresh_rate = 60.0
+      .refresh_rate = 10.0
     },
     {
       .width = 1440,
       .height = 900,
-      .refresh_rate = 60.0
+      .refresh_rate = 10.0
     },
     {
       .width = 1600,
       .height = 920,
-      .refresh_rate = 60.0
+      .refresh_rate = 10.0
     },
   };
   g_autolist (CrtcModeSpec) mode_specs = NULL;

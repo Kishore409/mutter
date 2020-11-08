@@ -448,6 +448,13 @@ clutter_test_check_actor_at_point (ClutterActor            *stage,
   g_clear_signal_handler (&press_id, stage);
 
   g_free (data);
+    {
+      ClutterActorBox box;
+      clutter_actor_get_allocation_box (actor, &box);
+      fprintf(stderr, ":::: %s:%d %s() - checking actor %s (%p) with allocation (%f, %f) -> (%f, %f)\n", __FILE__, __LINE__, __func__,
+              clutter_actor_get_name (actor), actor,
+              box.x1, box.y1, box.x2, box.y2);
+    }
 
   return *result == actor;
 }

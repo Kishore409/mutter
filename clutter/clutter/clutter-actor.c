@@ -3998,7 +3998,16 @@ clutter_actor_pick (ClutterActor       *actor,
     }
 
   if (clip_set)
+    {
+      fprintf(stderr, ":::: %s:%d %s() - pushing clip (%f, %f) -> (%f, %f) for %s (%p)\n", __FILE__, __LINE__, __func__,
+              clip.x1,
+              clip.y1,
+              clip.x2,
+              clip.y2,
+              clutter_actor_get_name (actor),
+              actor);
     clutter_pick_context_push_clip (pick_context, &clip);
+    }
 
   priv->next_effect_to_paint = NULL;
   if (priv->effects)
