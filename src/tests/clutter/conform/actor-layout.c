@@ -80,7 +80,7 @@ actor_margin_layout (void)
   clutter_actor_set_margin_bottom (flower[2], 6);
   clutter_actor_add_child (vase, flower[2]);
 
-  graphene_point_init (&p, 0, 7);
+  graphene_point_init (&p, 0.0001, 7);
   clutter_test_assert_actor_at_point (stage, &p, flower[0]);
 
   graphene_point_init (&p, 106, 50);
