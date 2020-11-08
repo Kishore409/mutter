@@ -330,8 +330,8 @@ timeline_markers_from_script (void)
                                      "scripts",
                                      "test-script-timeline-markers.json",
                                      NULL);
-  clutter_script_load_from_file (script, test_file, &error);
-  g_printerr ("Error: %s", error->message);
+  if (!clutter_script_load_from_file (script, test_file, &error))
+    g_printerr ("Error: %s", error->message);
 
   g_assert_no_error (error);
 
