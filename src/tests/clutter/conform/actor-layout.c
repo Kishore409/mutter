@@ -83,10 +83,10 @@ actor_margin_layout (void)
   graphene_point_init (&p, 0.0001, 7);
   clutter_test_assert_actor_at_point (stage, &p, flower[0]);
 
-  graphene_point_init (&p, 106, 50);
+  graphene_point_init (&p, 106.0001, 50);
   clutter_test_assert_actor_at_point (stage, &p, flower[1]);
 
-  graphene_point_init (&p, 212, 7);
+  graphene_point_init (&p, 212.0001, 7);
   clutter_test_assert_actor_at_point (stage, &p, flower[2]);
 
   clutter_actor_destroy (vase);
