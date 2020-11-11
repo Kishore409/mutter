@@ -1483,8 +1483,21 @@ xdg_surface_set_window_geometry (struct wl_client   *client,
                                  int32_t             width,
                                  int32_t             height)
 {
+  MetaWaylandXdgSurface *xdg_surface = wl_resource_get_user_data (resource);
+  MetaWaylandXdgSurfacePrivate *priv =
+    meta_wayland_xdg_surface_get_instance_private (xdg_surface);
   MetaWaylandSurface *surface = surface_from_xdg_surface_resource (resource);
   MetaWaylandSurfaceState *pending;
+
+  if (width == 0 || height == 0)
+    {
+      wl_resource_post_error (priv->shell_client->resource,
+                              XDG_WM_BASE_ERROR_INVALID_SURFACE_STATE,
+                              "Invalid geometry %dx%d+%d+%d set on xdg_surface@%d",
+                              width, height, x, y,
+                              wl_resource_get_id (resource));
+      return;
+    }
 
   pending = meta_wayland_surface_get_pending_state (surface);
   pending->has_new_geometry = TRUE;
