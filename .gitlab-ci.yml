@@ -31,9 +31,11 @@ stages:
       dnf clean all
 
 .only_default: &only_default
-  only:
-      - merge_requests
-      - /^.*$/
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH =~ /^gnome-[0-9-]\+$/'
+    - when: manual
 
 .mutter.fedora:33@x86_64:
   extends: .mutter.fedora:33@common
