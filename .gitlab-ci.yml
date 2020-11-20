@@ -11,7 +11,7 @@ stages:
 .mutter.fedora:33:
   variables:
     FDO_DISTRIBUTION_VERSION: 33
-    FDO_DISTRIBUTION_TAG: '2020-11-16.0'
+    FDO_DISTRIBUTION_TAG: '2020-11-20.0'
     FDO_UPSTREAM_REPO: GNOME/mutter
     FDO_DISTRIBUTION_EXEC: |
       dnf install -y 'dnf-command(builddep)' &&
@@ -27,6 +27,10 @@ stages:
       dnf builddep -y gnome-shell --setopt=install_weak_deps=False &&
       dnf remove -y gnome-bluetooth-libs-devel &&
       dnf remove -y --noautoremove mutter mutter-devel &&
+
+      # For review CI stage
+      dnf install -y python3-pip &&
+      pip3 install git+https://gitlab.freedesktop.org/freedesktop/ci-templates@8bea1f04c4c047f2f3e232d6db23b76656e52fbc &&
 
       dnf clean all
 
@@ -81,6 +85,28 @@ check-commit-log:
     reports:
       junit: commit-message-junit-report.xml
 
+check-merge-request:
+  extends:
+    - .fdo.distribution-image@fedora
+    - .mutter.fedora:33
+  stage: review
+  needs: ["build-fedora-container"]
+  script:
+    - if [[ x"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" != "x" ]] ;
+      then
+        ci-fairy check-merge-request \
+          --require-allow-collaboration \
+          --junit-xml=check-merge-request-report.xml ;
+      else
+        echo "Not a merge request" ;
+      fi
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - check-merge-request-report.xml
+    reports:
+      junit: check-merge-request-report.xml
+
 build-mutter:
   extends:
     - .fdo.distribution-image@fedora
@@ -88,6 +114,7 @@ build-mutter:
   stage: build
   needs:
     - check-commit-log
+    - check-merge-request
   script:
     - meson . build -Dbuildtype=debugoptimized -Db_coverage=true -Degl_device=true -Dwayland_eglstream=true --werror --prefix /usr
     - ninja -C build
@@ -104,6 +131,7 @@ build-without-opengl-and-glx:
   stage: build
   needs:
     - check-commit-log
+    - check-merge-request
   script:
     - meson . build -Dbuildtype=debugoptimized -Dopengl=false -Dglx=false -Degl_device=true -Dwayland_eglstream=true --werror --prefix /usr
     - ninja -C build
@@ -119,6 +147,7 @@ build-without-native-backend-and-wayland:
   stage: build
   needs:
     - check-commit-log
+    - check-merge-request
   script:
     - meson . build -Dbuildtype=debugoptimized -Dnative_backend=false -Dudev=false -Dwayland=false -Dcore_tests=false --werror --prefix /usr
     - ninja -C build
